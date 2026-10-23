@@ -1,31 +1,50 @@
 # Terrain Asset Painter
 
-This repository now includes a procedural asset-generation pipeline that creates real `.glb` files with generated textures, rather than only a script stub.
+This project is set up as a Godot add-on package. The add-on folder is:
 
-## Included output
+addons/terrain_asset_painter/
 
-Running the generator creates:
-- 20 tree `.glb` models
-- 20 grass `.glb` models
-- short and long grass variants
-- 1024x1024 generated textures embedded in the GLB exports
+## Install in Godot
 
-## Generate the assets
+Download this repository as a ZIP and extract it into the root of your Godot project so the path becomes:
 
-Requirements:
-- Python 3.10+
-- pip install pillow trimesh numpy
+- your_project/addons/terrain_asset_painter/
 
-Run:
+That is the correct layout for Godot 4.6.2. If you unzip directly into the `addons` folder, the final path should still be:
+
+- your_project/addons/terrain_asset_painter/plugin.gd
+
+## Build a zip for distribution
+
+You can also make a zip file that is ready to extract into your Godot project root:
+
+```bash
+python3 tools/build_addon_zip.py
+```
+
+This creates a zip file at the repository root named:
+
+- terrain_asset_painter_addon.zip
+
+The archive contains:
+
+- addons/terrain_asset_painter/...
+
+## Generate the built-in asset pack
+
+The repo includes a generator for procedural asset models and textures.
 
 ```bash
 python3 tools/generate_terrain_asset_pack.py
 ```
 
-Output folder:
-- `generated_assets/trees/`
-- `generated_assets/grass/`
+The script writes output to:
+
+- generated_assets/trees/
+- generated_assets/grass/
 
 ## Notes
 
-These are procedural generated models designed for terrain painting and quick prototyping. They are suitable for gameplay use and rapid asset placement, but they are not a licensed AAA art pack.
+- The terrain painting add-on supports textured terrain painting and 3D model placement.
+- It is designed to work with Hterrain-style terrain nodes by dynamic API detection.
+- Generated assets are procedural placeholders and can be used as a working terrain asset pack.
