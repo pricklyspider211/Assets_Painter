@@ -7,27 +7,33 @@ import numpy as np
 from PIL import Image, ImageFilter
 import trimesh
 
-ROOT = Path(__file__).resolve().parent
+ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "generated_assets"
 TREES = OUT / "trees"
 GRASS = OUT / "grass"
-TEXTURE_SIZE = 1024
+TEXTURE_WIDTH = 1920
+TEXTURE_HEIGHT = 1080
+
+
+def save_texture(img: Image.Image, path: Path) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    img.save(path)
 
 
 def make_wood_texture(seed: int) -> Image.Image:
     rng = random.Random(seed)
-    img = Image.new("RGB", (TEXTURE_SIZE, TEXTURE_SIZE), (120, 90, 65))
+    img = Image.new("RGB", (TEXTURE_WIDTH, TEXTURE_HEIGHT), (120, 90, 65))
     pixels = np.array(img, dtype=np.uint8)
 
-    for _ in range(1800):
-        x = rng.randint(0, TEXTURE_SIZE - 1)
-        y = rng.randint(0, TEXTURE_SIZE - 1)
-        shade = rng.randint(35, 80)
+    for _ in range(2600):
+        x = rng.randint(0, TEXTURE_WIDTH - 1)
+        y = rng.randint(0, TEXTURE_HEIGHT - 1)
+        shade = rng.randint(35, 90)
         pixels[y, x] = [max(0, 90 + shade), max(0, 70 + shade // 2), max(0, 55 + shade // 3)]
 
-    for _ in range(500):
-        x = rng.randint(0, TEXTURE_SIZE - 1)
-        y = rng.randint(0, TEXTURE_SIZE - 1)
+    for _ in range(550):
+        x = rng.randint(0, TEXTURE_WIDTH - 1)
+        y = rng.randint(0, TEXTURE_HEIGHT - 1)
         if rng.random() < 0.5:
             pixels[y, x] = [45, 30, 20]
 
@@ -37,21 +43,21 @@ def make_wood_texture(seed: int) -> Image.Image:
 
 def make_leaf_texture(seed: int, hue_shift: float = 0.0) -> Image.Image:
     rng = random.Random(seed)
-    img = Image.new("RGB", (TEXTURE_SIZE, TEXTURE_SIZE), (60, 150, 70))
+    img = Image.new("RGB", (TEXTURE_WIDTH, TEXTURE_HEIGHT), (60, 150, 70))
     pixels = np.array(img, dtype=np.uint8)
 
-    for _ in range(20000):
-        x = rng.randint(0, TEXTURE_SIZE - 1)
-        y = rng.randint(0, TEXTURE_SIZE - 1)
-        shade = rng.randint(10, 80)
-        r = max(0, min(255, 40 + shade + int(hue_shift * 80)))
+    for _ in range(26000):
+        x = rng.randint(0, TEXTURE_WIDTH - 1)
+        y = rng.randint(0, TEXTURE_HEIGHT - 1)
+        shade = rng.randint(10, 90)
+        r = max(0, min(255, 35 + shade + int(hue_shift * 80)))
         g = max(0, min(255, 140 + shade))
         b = max(0, min(255, 60 + shade // 2))
         pixels[y, x] = [r, g, b]
 
-    for _ in range(800):
-        x = rng.randint(0, TEXTURE_SIZE - 1)
-        y = rng.randint(0, TEXTURE_SIZE - 1)
+    for _ in range(900):
+        x = rng.randint(0, TEXTURE_WIDTH - 1)
+        y = rng.randint(0, TEXTURE_HEIGHT - 1)
         if rng.random() < 0.3:
             pixels[y, x] = [20, 80, 30]
 
@@ -61,18 +67,17 @@ def make_leaf_texture(seed: int, hue_shift: float = 0.0) -> Image.Image:
 
 def make_grass_texture(seed: int, light: int = 80) -> Image.Image:
     rng = random.Random(seed)
-    img = Image.new("RGB", (TEXTURE_SIZE, TEXTURE_SIZE), (60, 110, 55))
+    img = Image.new("RGB", (TEXTURE_WIDTH, TEXTURE_HEIGHT), (60, 110, 55))
     pixels = np.array(img, dtype=np.uint8)
 
-    for _ in range(15000):
-        x = rng.randint(0, TEXTURE_SIZE - 1)
-        y = rng.randint(0, TEXTURE_SIZE - 1)
+    for _ in range(18000):
+        x = rng.randint(0, TEXTURE_WIDTH - 1)
+        y = rng.randint(0, TEXTURE_HEIGHT - 1)
         shade = rng.randint(20, 90)
         pixels[y, x] = [max(0, 30 + shade), max(0, 100 + shade // 2 + light), 50 + shade // 2]
 
-    # Add blade-like streaking pattern
-    for y in range(TEXTURE_SIZE):
-        for x in range(TEXTURE_SIZE):
+    for y in range(TEXTURE_HEIGHT):
+        for x in range(TEXTURE_WIDTH):
             if ((x + y + seed * 13) % 31) == 0:
                 pixels[y, x] = [20, 80, 30]
 
@@ -80,9 +85,7 @@ def make_grass_texture(seed: int, light: int = 80) -> Image.Image:
 
 
 def apply_texture(mesh: trimesh.Trimesh, image: Image.Image, uv_scale: float = 1.0):
-    width, height = image.size
     vertices = mesh.vertices
-    # Planar UV mapping for simple meshes.
     u = (vertices[:, 0] + 1.0) * 0.5
     v = (vertices[:, 2] + 1.0) * 0.5
     uv = np.column_stack([u * uv_scale, v * uv_scale])
@@ -90,13 +93,15 @@ def apply_texture(mesh: trimesh.Trimesh, image: Image.Image, uv_scale: float = 1
     return mesh
 
 
-def build_tree(seed: int, kind: str = "broadleaf") -> trimesh.Scene:
+def build_tree(seed: int) -> trimesh.Scene:
     rng = random.Random(seed)
     height = 1.8 + rng.random() * 1.8
     trunk_r = 0.14 + rng.random() * 0.12
-    trunk = trimesh.creation.cylinder(radius=trunk_r, height=height, sections=24)
+    trunk = trimesh.creation.cylinder(radius=trunk_r, height=height, sections=28)
     trunk.apply_translation([0, height / 2.0, 0])
-    trunk = apply_texture(trunk, make_wood_texture(seed + 17), uv_scale=2.0)
+
+    wood_tex = make_wood_texture(seed + 17)
+    trunk = apply_texture(trunk, wood_tex, uv_scale=2.0)
 
     crown_count = 3 + rng.randint(0, 2)
     crowns = []
@@ -109,7 +114,8 @@ def build_tree(seed: int, kind: str = "broadleaf") -> trimesh.Scene:
             (rng.random() - 0.5) * 1.5,
         ]
         sphere.apply_translation(offset)
-        sphere = apply_texture(sphere, make_leaf_texture(seed + i * 17 + 9, hue_shift=(i / max(1, crown_count)) * 0.6), uv_scale=1.5)
+        leaf_tex = make_leaf_texture(seed + i * 17 + 9, hue_shift=(i / max(1, crown_count)) * 0.6)
+        sphere = apply_texture(sphere, leaf_tex, uv_scale=1.5)
         crowns.append(sphere)
 
     scene = trimesh.Scene()
@@ -122,11 +128,10 @@ def build_tree(seed: int, kind: str = "broadleaf") -> trimesh.Scene:
 def build_grass(seed: int, length_type: str = "short") -> trimesh.Scene:
     rng = random.Random(seed)
     scene = trimesh.Scene()
-
-    blade_count = 10 + rng.randint(0, 8)
+    blade_count = 12 + rng.randint(0, 8)
     grass_tex = make_grass_texture(seed + 99, light=90 if length_type == "short" else 60)
 
-    for i in range(blade_count):
+    for _ in range(blade_count):
         blade_height = 0.25 + rng.random() * (0.55 if length_type == "short" else 1.2)
         blade = trimesh.creation.box(extents=[0.08, blade_height, 0.02])
         blade.apply_translation([
@@ -150,20 +155,27 @@ def export_scene(scene: trimesh.Scene, target: Path):
     trimesh.exchange.gltf.export_glb(scene, file_obj=str(target))
 
 
-def generate_pack():
+def generate_pack() -> None:
     TREES.mkdir(parents=True, exist_ok=True)
     GRASS.mkdir(parents=True, exist_ok=True)
 
     for i in range(20):
         tree = build_tree(i)
+        wood_tex = make_wood_texture(i + 17)
+        leaf_tex = make_leaf_texture(i + 13, hue_shift=0.25)
+        save_texture(wood_tex, TREES / f"tree_{i + 1:02d}_wood.png")
+        save_texture(leaf_tex, TREES / f"tree_{i + 1:02d}_leaf.png")
         export_scene(tree, TREES / f"tree_{i + 1:02d}.glb")
 
     for i in range(20):
         mode = "short" if i % 2 == 0 else "long"
         grass = build_grass(i, mode)
+        gtex = make_grass_texture(i + 99, light=90 if mode == "short" else 60)
+        save_texture(gtex, GRASS / f"grass_{i + 1:02d}_{mode}.png")
         export_scene(grass, GRASS / f"grass_{i + 1:02d}_{mode}.glb")
 
-    print(f"Generated 20 tree models + 20 grass models into {OUT}")
+    print(f"Generated 20 tree models + 20 grass models under {OUT}")
+    print("Texture PNGs are saved alongside each model at 1920x1080 resolution.")
 
 
 if __name__ == "__main__":
