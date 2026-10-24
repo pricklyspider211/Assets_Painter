@@ -1,50 +1,24 @@
 # Terrain Asset Painter
 
-This project is set up as a Godot add-on package. The add-on folder is:
+This project contains a Godot 4.6.2 addon with:
+- terrain texture paint support
+- model paint support
+- random forest-style scattered placement while painting
+- imported PNG textures and GLB models
+- GitHub Actions asset generation workflow
 
-addons/terrain_asset_painter/
+## Random model painting
 
-## Install in Godot
+The model painter now supports:
+- multiple imported models at once
+- random model selection from the active palette
+- random scale and rotation
+- scattered placement within the brush radius
+- forest-like distribution using density and cluster radius
 
-Download this repository as a ZIP and extract it into the root of your Godot project so the path becomes:
+## GitHub Actions
 
-- your_project/addons/terrain_asset_painter/
+The workflow file is located at:
+- .github/workflows/generate_terrain_asset_pack.yml
 
-That is the correct layout for Godot 4.6.2. If you unzip directly into the `addons` folder, the final path should still be:
-
-- your_project/addons/terrain_asset_painter/plugin.gd
-
-## Build a zip for distribution
-
-You can also make a zip file that is ready to extract into your Godot project root:
-
-```bash
-python3 tools/build_addon_zip.py
-```
-
-This creates a zip file at the repository root named:
-
-- terrain_asset_painter_addon.zip
-
-The archive contains:
-
-- addons/terrain_asset_painter/...
-
-## Generate the built-in asset pack
-
-The repo includes a generator for procedural asset models and textures.
-
-```bash
-python3 tools/generate_terrain_asset_pack.py
-```
-
-The script writes output to:
-
-- generated_assets/trees/
-- generated_assets/grass/
-
-## Notes
-
-- The terrain painting add-on supports textured terrain painting and 3D model placement.
-- It is designed to work with Hterrain-style terrain nodes by dynamic API detection.
-- Generated assets are procedural placeholders and can be used as a working terrain asset pack.
+Run it manually from the Actions tab to generate the asset pack in-repo.

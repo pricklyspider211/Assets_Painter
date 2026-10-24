@@ -21,6 +21,9 @@ enum PaintMode { TEXTURE, MODEL }
 @export var random_rotation: bool = true
 @export var max_placed_models: int = 200
 @export var place_on_ground: bool = true
+@export var paint_density: float = 0.7
+@export var max_models_per_brush: int = 12
+@export var cluster_radius: float = 1.8
 
 var _placed_models: Array[Node3D] = []
 
@@ -121,32 +124,42 @@ func _paint_model(world_position: Vector3) -> void:
         return
 
     var terrain = _get_terrain_node()
-    var scene = model_library[randi() % model_library.size()]
-    if scene == null:
-        return
+    var spawn_count = int(clamp(max_models_per_brush * paint_density, 1, max_models_per_brush))
 
-    var instance = scene.instantiate()
-    if not instance is Node3D:
-        return
+    for i in range(spawn_count):
+        var offset_x = randf_range(-brush_radius, brush_radius)
+        var offset_z = randf_range(-brush_radius, brush_radius)
+        if cluster_radius > 0.0:
+            offset_x *= randf_range(0.2, 1.0)
+            offset_z *= randf_range(0.2, 1.0)
 
-    var node3d = instance as Node3D
-    var final_pos = world_position
+        var point = world_position + Vector3(offset_x, 0.0, offset_z)
+        var scene = model_library[randi() % model_library.size()]
+        if scene == null:
+            continue
 
-    if place_on_ground and terrain != null:
-        final_pos.y = _get_ground_height(terrain, world_position)
+        var instance = scene.instantiate()
+        if not instance is Node3D:
+            continue
 
-    node3d.position = final_pos
-    if random_rotation:
-        node3d.rotation_degrees.y = randf_range(0.0, 360.0)
-    node3d.scale = Vector3.ONE * randf_range(model_scale_min, model_scale_max)
+        var node3d = instance as Node3D
+        var final_pos = point
 
-    add_child(node3d)
-    _placed_models.append(node3d)
+        if place_on_ground and terrain != null:
+            final_pos.y = _get_ground_height(terrain, point)
 
-    if _placed_models.size() > max_placed_models:
-        var old = _placed_models.pop_front()
-        if is_instance_valid(old):
-            old.queue_free()
+        node3d.position = final_pos
+        if random_rotation:
+            node3d.rotation_degrees.y = randf_range(0.0, 360.0)
+        node3d.scale = Vector3.ONE * randf_range(model_scale_min, model_scale_max)
+
+        add_child(node3d)
+        _placed_models.append(node3d)
+
+        if _placed_models.size() > max_placed_models:
+            var old = _placed_models.pop_front()
+            if is_instance_valid(old):
+                old.queue_free()
 
 func _get_ground_height(terrain: Node, world_position: Vector3) -> float:
     if terrain.has_method("get_height_at"):
